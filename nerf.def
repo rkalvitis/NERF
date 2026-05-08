@@ -49,7 +49,7 @@ From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu20.04
 
     # ---- NeRF runtime dependencies ----
     /opt/conda/envs/nerf/bin/pip install \
-        numpy \
+        "numpy==1.23.5" \
         matplotlib \
         imageio \
         imageio-ffmpeg \
@@ -69,6 +69,7 @@ From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu20.04
     Python          3.8
     GPU_target      RTX_4080_sm89_PTX_JIT
     TF_determinism  TF_DETERMINISTIC_OPS=1
+    NumPy           1.23.5_pinned_for_np.object_compat
 
 %help
     NeRF reproduction container. Example launch:
