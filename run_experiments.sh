@@ -60,6 +60,7 @@ for SEED in $SEEDS; do
         # %environment block, so cuDNN ops are deterministic here.
         PYTHONHASHSEED=$SEED \
         CUDA_VISIBLE_DEVICES=$DEVICE \
+        TF_DETERMINISTIC_OPS=0 \
         python "$WORKSPACE/run_nerf.py" \
             --config "$WORKSPACE/paper_configs/llff_config.txt" \
             --expname  "$RUN_NAME" \

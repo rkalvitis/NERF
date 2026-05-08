@@ -50,8 +50,10 @@ Only minimal additions; all original defaults are preserved:
 | `run_nerf.py` | Added `--N_iters` argument (default `1000000` = original hardcoded value) |
 | `run_nerf.py` | Line 746: `N_iters = args.N_iters` instead of hardcoded `1000000` |
 | `paper_configs/llff_config.txt` | Added `N_iters = 200000` (matches the comment already in that file) |
+| `load_llff.py` | Removed `ignoregamma=True` from `imageio.imread` — removed in imageio ≥ 2.9 |
+| `run_experiments.sh` | Sets `TF_DETERMINISTIC_OPS=0` per run — see note below |
 
-Everything else in `run_nerf.py` (all hyperparameter defaults, training loop, logging frequency, checkpoint frequency) is unchanged from the original.
+**TF_DETERMINISTIC_OPS note:** The container's `%environment` sets `TF_DETERMINISTIC_OPS=1` globally. This flag forces cuDNN to use deterministic algorithms that require large workspace buffers, pushing activation memory over 16 GB with the paper's `N_rand=4096` — causing OOM on the RTX 4080. The original paper ran on V100 + CUDA 10.0 *without* this flag. `run_experiments.sh` overrides it to `0` per run, matching the paper's actual execution environment. Run-to-run GPU variance from non-deterministic cuDNN ops is ~0.1–0.3 dB PSNR; the 5-seed setup captures this.
 
 ---
 
@@ -379,7 +381,7 @@ nvidia-smi  # confirm no processes running
 | Total runs | 40, sequential |
 | Iters/run | 200 000 (set via `N_iters = 200000` in `paper_configs/llff_config.txt`) |
 | Estimated wall time | ~20 days |
-| Seed scope | `np.random` + TF global seed + `PYTHONHASHSEED`; GPU cuDNN deterministic via `TF_DETERMINISTIC_OPS=1` |
+| Seed scope | `np.random` + TF global seed + `PYTHONHASHSEED`; cuDNN non-deterministic (matches paper) |
 | Expected PSNR variance | ~0.1–0.3 dB across seeds (residual TF1 eager non-determinism) |
 | If SSH drops | `screen -r nerf -U` |
 | Restart safety | Script skips runs with `testset_200000/` already present |
