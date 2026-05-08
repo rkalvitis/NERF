@@ -129,7 +129,7 @@ def render_rays(ray_batch,
         # regularize network during training (prevents floater artifacts).
         noise = 0.
         if raw_noise_std > 0.:
-            noise = tf.random.normal(raw[..., 3].shape) * raw_noise_std
+            noise = tf.cast(np.random.normal(size=raw[..., 3].shape), dtype=tf.float32) * raw_noise_std
 
         # Predict density of each sample along each ray. Higher values imply
         # higher likelihood of being absorbed at this point.
@@ -195,7 +195,7 @@ def render_rays(ray_batch,
         upper = tf.concat([mids, z_vals[..., -1:]], -1)
         lower = tf.concat([z_vals[..., :1], mids], -1)
         # stratified samples in those intervals
-        t_rand = tf.random.uniform(z_vals.shape)
+        t_rand = tf.cast(np.random.uniform(size=z_vals.shape), dtype=tf.float32)
         z_vals = lower + (upper - lower) * t_rand
 
     # Points in space to evaluate model at.
@@ -497,6 +497,8 @@ def config_parser():
                         help='specific weights npy file to reload for coarse network')
     parser.add_argument("--random_seed", type=int, default=None,
                         help='fix random seed for repeatability')
+    parser.add_argument("--N_iters", type=int, default=1000000,
+                        help='number of training iterations')
     
     # pre-crop options
     parser.add_argument("--precrop_iters", type=int, default=0,
@@ -743,7 +745,7 @@ def train():
         print('done')
         i_batch = 0
 
-    N_iters = 1000000
+    N_iters = args.N_iters
     print('Begin')
     print('TRAIN views are', i_train)
     print('TEST views are', i_test)

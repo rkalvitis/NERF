@@ -1,0 +1,84 @@
+Bootstrap: docker
+From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu20.04
+
+# -------------------------------------------------------
+# NeRF (Mildenhall et al. 2020) reproduction container.
+#
+# Uses nvidia-tensorflow 1.15.5+nv22.12 — NVIDIA's fork of
+# TF 1.15 compiled for CUDA 11.x. The official
+# tensorflow-gpu==1.15 uses CUDA 10.0 and cannot run on
+# the RTX 4080 (sm_89). TF kernels for sm_89 are not
+# pre-compiled; TF falls back to PTX JIT on first run
+# (3–5 min silent pause) then caches the binary.
+# -------------------------------------------------------
+
+%environment
+    export PATH=/opt/conda/envs/nerf/bin:/opt/conda/bin:$PATH
+    export CUDA_HOME=/usr/local/cuda-11.8
+    # Grow GPU memory on demand instead of allocating all at startup
+    export TF_FORCE_GPU_ALLOW_GROWTH=true
+    # Deterministic cuDNN ops — slower but reproducible across runs
+    export TF_DETERMINISTIC_OPS=1
+    export TF_DISABLE_SEGMENT_REDUCTION_OP_DETERMINISM_EXCEPTIONS=1
+    # Suppress Qt display errors on headless server
+    export QT_QPA_PLATFORM=offscreen
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+
+    apt-get update && apt-get install -y \
+        build-essential wget git curl \
+        imagemagick \
+        ffmpeg \
+        libsm6 libxext6 libxrender-dev \
+        && rm -rf /var/lib/apt/lists/*
+
+    # ---- Miniconda with Python 3.8 (required by nvidia-tensorflow) ----
+    wget -q \
+        https://repo.anaconda.com/miniconda/Miniconda3-py38_23.3.1-0-Linux-x86_64.sh \
+        -O /tmp/miniconda.sh
+    bash /tmp/miniconda.sh -b -p /opt/conda
+    rm /tmp/miniconda.sh
+    /opt/conda/bin/conda create -y -n nerf python=3.8
+    /opt/conda/envs/nerf/bin/pip install --upgrade pip
+
+    # ---- nvidia-tensorflow: TF 1.15 for CUDA 11.x ----
+    # nvidia-pyindex adds NVIDIA's private PyPI index
+    /opt/conda/envs/nerf/bin/pip install nvidia-pyindex
+    /opt/conda/envs/nerf/bin/pip install "nvidia-tensorflow==1.15.5+nv22.12"
+
+    # ---- NeRF runtime dependencies ----
+    /opt/conda/envs/nerf/bin/pip install \
+        numpy \
+        matplotlib \
+        imageio \
+        imageio-ffmpeg \
+        configargparse
+
+    # ---- Post-training metrics (not in original environment.yml) ----
+    # scikit-image: SSIM via skimage.metrics.structural_similarity
+    # lpips: LPIPS with AlexNet backbone, matching the paper
+    /opt/conda/envs/nerf/bin/pip install \
+        scikit-image \
+        lpips
+
+%labels
+    Author          roberts.kalvitis
+    Framework       nvidia-tensorflow 1.15.5+nv22.12
+    CUDA            11.8
+    Python          3.8
+    GPU_target      RTX_4080_sm89_PTX_JIT
+    TF_determinism  TF_DETERMINISTIC_OPS=1
+
+%help
+    NeRF reproduction container. Example launch:
+
+      singularity exec --nv --cleanenv --contain \
+        --bind /path/to/nerf:/workspace \
+        --bind /path/to/data:/data \
+        --bind /path/to/output:/output \
+        ~/containers/nerf.sif \
+        bash /workspace/run_experiments.sh
+
+    First-run note: TF will JIT-compile PTX to sm_89 on first GPU
+    kernel call. This takes 3-5 minutes with no output — do not kill.
