@@ -51,7 +51,7 @@ From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu20.04
     /opt/conda/envs/nerf/bin/pip install \
         "numpy==1.23.5" \
         matplotlib \
-        imageio \
+        "imageio==2.9.0" \
         imageio-ffmpeg \
         configargparse
 

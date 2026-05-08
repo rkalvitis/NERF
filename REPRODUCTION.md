@@ -177,7 +177,7 @@ Build takes **15–20 minutes**. If it fails on the `nvidia-pyindex` step due to
 CUDA_VISIBLE_DEVICES=1 singularity exec --nv ~/containers/nerf.sif /opt/conda/envs/nerf/bin/python -c "
 import tensorflow as tf
 print('TF:', tf.__version__)
-gpus = tf.config.list_physical_devices('GPU')
+gpus = tf.config.experimental.list_physical_devices('GPU')
 print('GPUs visible:', gpus)
 import numpy; print('numpy:', numpy.__version__)
 import imageio; print('imageio: OK')
