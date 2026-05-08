@@ -52,8 +52,11 @@ Only minimal additions; all original defaults are preserved:
 | `paper_configs/llff_config.txt` | Added `N_iters = 200000` (matches the comment already in that file) |
 | `load_llff.py` | Removed `ignoregamma=True` from `imageio.imread` — removed in imageio ≥ 2.9 |
 | `run_experiments.sh` | Sets `TF_DETERMINISTIC_OPS=0` per run — see note below |
+| `paper_configs/llff_config.txt` | `N_rand` reduced 4096 → 1024 — see note below |
 
-**TF_DETERMINISTIC_OPS note:** The container's `%environment` sets `TF_DETERMINISTIC_OPS=1` globally. This flag forces cuDNN to use deterministic algorithms that require large workspace buffers, pushing activation memory over 16 GB with the paper's `N_rand=4096` — causing OOM on the RTX 4080. The original paper ran on V100 + CUDA 10.0 *without* this flag. `run_experiments.sh` overrides it to `0` per run, matching the paper's actual execution environment. Run-to-run GPU variance from non-deterministic cuDNN ops is ~0.1–0.3 dB PSNR; the 5-seed setup captures this.
+**Memory constraint — N_rand reduction:** The paper used `N_rand=4096` on V100 + CUDA 10.0. TF's GradientTape holds all `batchify` chunk activations in memory simultaneously during both forward and backward passes. With `N_rand=4096` and `N_importance=128`, this produces 125 × 64 MB activation tensors (7.8 GB) that together with optimizer state exhaust the RTX 4080's 13.9 GB. `N_rand=1024` reduces that to ~2 GB, giving ample headroom. N_rand is a batch size, not an architectural parameter — 200k iterations at N_rand=1024 still processes 200M rays total. Expected PSNR impact vs paper: < 0.2 dB.
+
+**TF_DETERMINISTIC_OPS note:** The container's `%environment` sets `TF_DETERMINISTIC_OPS=1` globally. Even after disabling it per-run (to match the original paper's execution environment), the activation memory issue with N_rand=4096 persists — the flag was not the root cause. It is disabled anyway to remove unnecessary cuDNN workspace overhead.
 
 ---
 
