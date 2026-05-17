@@ -15,7 +15,7 @@ Replicates **Mildenhall et al. 2020 (NeRF) Table 1** — PSNR/SSIM/LPIPS across 
 | `paper_configs/llff_config.txt` | LLFF hyperparameters for Table 1 — `N_iters = 200000` added |
 | `nerf.def` | Singularity definition file — nvidia-tensorflow 1.15 on CUDA 11.8 |
 | `run_experiments.sh` | Runs all 8 scenes × 5 seeds; set `DEVICE=` at the top |
-| `compute_metrics.py` | Computes SSIM + LPIPS from saved test renders (**still to create**) |
+| `compute_metrics.py` | Computes PSNR / SSIM / LPIPS from saved test renders — see Phase 7 |
 
 ---
 
@@ -332,30 +332,51 @@ Format: `expname  iter  psnr  loss  global_step`. Paper reports ~26 dB for fern 
 
 ## Phase 7 — Collect results
 
-**PSNR** is already logged in each run's `.log` file. To extract the final value:
+**PSNR** is already logged in each run's `.log` file. To extract the final value for one run:
 
 ```bash
 grep "fern_seed0" /media/white/nanodrones/roberts.kalvitis/nerf/nerf_output/run_logs/fern_seed0.log | tail -1
 ```
 
-**SSIM and LPIPS** require running `compute_metrics.py` against the saved test renders. Test images are written to `experiments/<run_name>/testset_200000/` every `i_testset` iterations (default 50 000). The final set at 200 000 iterations is used for reporting.
+Format: `expname  iter  psnr  loss  global_step`
 
-You still need to create `compute_metrics.py`. It should:
-1. Find all `experiments/*/testset_200000/*.png` files
-2. Load the matching ground-truth images from `nerf_llff_data/<scene>/images_4/` (factor=4 downsampled)
-3. Compute PSNR, SSIM (`skimage.metrics.structural_similarity`, multichannel), LPIPS (`lpips.LPIPS(net='alex')`)
-4. Write a `results.json` per run and a summary CSV
+**SSIM and LPIPS** are computed by `compute_metrics.py` from the saved test renders.  
+Test images are written to `experiments/<run_name>/testset_NNNNNN/` every 50 000 iterations — the script automatically picks the latest available folder, so it works even if training was stopped early.
 
-Run it inside the container after all experiments finish:
+### Running compute_metrics.py
+
+The script uses LPIPS with AlexNet (`net='alex'`, same as the paper). AlexNet weights (~232 MB) are downloaded on first run and cached at:
+
+```
+/media/white/nanodrones/roberts.kalvitis/3dgs/torch_cache/hub/checkpoints/
+```
+
+alongside the existing `vgg16-397923af.pth`. Subsequent runs are fully offline.
 
 ```bash
 singularity exec --nv --cleanenv --contain \
     --bind /media/white/nanodrones/roberts.kalvitis/nerf/nerf_output:/output \
     --bind /media/white/nanodrones/roberts.kalvitis/nerf/nerf_data:/data \
     --bind /home/robertsk/NERF:/workspace \
+    --bind /media/white/nanodrones/roberts.kalvitis/3dgs/torch_cache:/media/white/nanodrones/roberts.kalvitis/3dgs/torch_cache \
     ~/containers/nerf.sif \
-    python /workspace/compute_metrics.py
+    python /workspace/compute_metrics.py --seeds 0 1 --out /output/results.csv
+```
 
+Output: a table printed to stdout + `/output/results.csv` with columns:
+`scene, seed, iter, psnr_img, psnr_log, ssim, lpips_alex`
+
+- `psnr_img` — recomputed from saved PNG renders vs ground-truth images
+- `psnr_log` — last PSNR value extracted from the `.log` file (available even if no testset renders exist yet)
+
+To run for all 5 seeds once they are available:
+
+```bash
+# (same singularity command, change --seeds)
+    python /workspace/compute_metrics.py --seeds 0 1 2 3 4 --out /output/results_all.csv
+```
+
+```bash
 # Free the GPU when done
 nvidia-smi  # confirm no processes running
 # Post on MSTeams: "GPU X is free"
