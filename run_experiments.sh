@@ -21,6 +21,15 @@ SEEDS="0 1 2 3 4"
 LLFF_SCENES="fern flower fortress horns leaves orchids room trex"
 
 # ----------------------------------------------------------------
+# Resume from a specific seed/scene after a crash.
+# Set RESUME_SEED and RESUME_SCENE to the first run that did NOT
+# finish. Everything before this point is skipped unconditionally.
+# Set RESUME_SEED="" to disable and run from the beginning.
+# ----------------------------------------------------------------
+RESUME_SEED=2
+RESUME_SCENE=orchids
+
+# ----------------------------------------------------------------
 # Container-internal paths (set by --bind flags in the launch cmd)
 # ----------------------------------------------------------------
 WORKSPACE=/workspace
@@ -35,8 +44,23 @@ mkdir -p "$EXPERIMENTS" "$RUN_LOGS"
 # Completing one full seed gives a complete Table 1 comparison;
 # additional seeds build variance estimates.
 # ----------------------------------------------------------------
+SKIPPING=false
+if [ -n "$RESUME_SEED" ] && [ -n "$RESUME_SCENE" ]; then
+    SKIPPING=true
+fi
+
 for SEED in $SEEDS; do
     for SCENE in $LLFF_SCENES; do
+
+        # Fast-skip everything before the resume point.
+        if [ "$SKIPPING" = true ]; then
+            if [ "$SEED" -eq "$RESUME_SEED" ] && [ "$SCENE" = "$RESUME_SCENE" ]; then
+                SKIPPING=false
+            else
+                echo "  Skipping $SCENE seed$SEED (before resume point)"
+                continue
+            fi
+        fi
 
         RUN_NAME="${SCENE}_seed${SEED}"
         LOG_FILE="${RUN_LOGS}/${RUN_NAME}.log"
