@@ -12,7 +12,7 @@
 #   running on the node.
 # ================================================================
 
-DEVICE=1    # <-- set to your booked GPU index (0, 1, 2, ...)
+DEVICE=0    # <-- set to your booked GPU index (0, 1, 2, ...)
 
 # ----------------------------------------------------------------
 # Scene and seed lists — do not change these for Table 1
@@ -26,8 +26,8 @@ LLFF_SCENES="fern flower fortress horns leaves orchids room trex"
 # finish. Everything before this point is skipped unconditionally.
 # Set RESUME_SEED="" to disable and run from the beginning.
 # ----------------------------------------------------------------
-RESUME_SEED=2
-RESUME_SCENE=orchids
+RESUME_SEED=4
+RESUME_SCENE=flower
 
 # ----------------------------------------------------------------
 # Container-internal paths (set by --bind flags in the launch cmd)
