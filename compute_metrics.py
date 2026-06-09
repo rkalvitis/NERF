@@ -140,11 +140,18 @@ def parse_args():
     p.add_argument("--seeds",  nargs="+", type=int, default=[0, 1])
     p.add_argument("--scenes", nargs="+", default=SCENES)
     p.add_argument("--out",    default="results.csv")
+    p.add_argument("--datadir", default=DATADIR,
+                   help="GT scene root (e.g. /data/nerf_butterfly)")
+    p.add_argument("--factor", type=int, default=FACTOR,
+                   help="GT image downsample factor (1 for butterfly scenes)")
     return p.parse_args()
 
 
 def main():
+    global DATADIR, FACTOR
     args = parse_args()
+    DATADIR = args.datadir
+    FACTOR = args.factor
     rows = []
 
     hdr = f"{'scene':<12} {'seed':>4} {'iter':>8}  {'PSNR(img)':>9}  {'PSNR(log)':>9}  {'SSIM':>7}  {'LPIPS':>7}"

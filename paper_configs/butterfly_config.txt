@@ -1,0 +1,38 @@
+# FineView butterfly scenes — 360° inward-facing object captures
+# (8 calibrated cameras x 40 turntable positions = 320 views, white bg).
+#
+# dataset_type = llff refers to the DATA LOADER / file format only
+# (poses_bounds.npy produced by fineview2nerf.py) — the data is the
+# FineView butterfly dataset, not the LLFF forward-facing scenes.
+#
+# expname and datadir are overridden per species by run_butterfly_train.sh.
+
+expname = butterfly
+basedir = ./logs
+datadir = ./data/nerf_butterfly/009-Neophasia_Menapia-001
+dataset_type = llff
+
+# Images are pre-resized by fineview2nerf.py (default width 800);
+# factor = 1 uses them as-is (images_1 symlink avoids the minify step).
+factor = 1
+
+# Every 8th image held out for test — same protocol as 3DGS --eval.
+llffhold = 8
+
+# 360° object scene: NDC only works for forward-facing captures.
+no_ndc = True
+spherify = True
+lindisp = True
+
+no_batching = False
+
+use_viewdirs = True
+lrate_decay = 250
+raw_noise_std = 1.0
+
+N_samples = 64
+N_importance = 128
+
+# N_rand 4096 in the paper; 1024 fits the RTX 4080 16 GB (see REPRODUCTION.md)
+N_rand = 1024
+N_iters = 200000
