@@ -24,6 +24,10 @@ no_ndc = True
 spherify = True
 lindisp = True
 
+# Images are masked to a white background; composite empty rays onto white
+# so the network doesn't have to fill the volume with white density.
+white_bkgd = True
+
 no_batching = False
 
 use_viewdirs = True
