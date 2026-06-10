@@ -28,11 +28,32 @@ lindisp = True
 # so the network doesn't have to fill the volume with white density.
 white_bkgd = True
 
-no_batching = False
+# White butterfly on white background: ~80% of rays are pure background
+# and the all-white "empty scene" is a strong local minimum (run 1+2 both
+# collapsed into it: train PSNR pinned at ~16 dB = the all-white baseline).
+# Follow the Blender/white_bkgd recipe: sample rays from one image per
+# iteration (precrop only works on this path) and spend the first
+# iterations on the image center, where the butterfly is, so density
+# gradients outweigh the empty-scene pull.
+no_batching = True
+precrop_iters = 500
+precrop_frac = 0.5
+
+# FineView is a telephoto turntable capture: cameras sit ~20 object-radii
+# away (FOV ~12°), so after spherify normalizes the camera sphere to
+# radius 1 the butterfly is only ~0.1 units across. The default
+# multires = 10 (max freq 2^9) gives ~8 positional-encoding periods
+# across the object, while the images resolve it at ~400 px — the fine
+# wing markings are unrepresentable. 14 (max freq 2^13) gives ~130
+# periods, matching image resolution.
+multires = 14
 
 use_viewdirs = True
 lrate_decay = 250
-raw_noise_std = 1.0
+# raw_noise_std is the LLFF-scene floater regularizer; the Blender/white-bg
+# recipe runs without it. With white_bkgd the noise also pushes raw sigma
+# deeper into the dead-ReLU region, entrenching the empty-scene collapse.
+raw_noise_std = 0.0
 
 N_samples = 64
 N_importance = 128
