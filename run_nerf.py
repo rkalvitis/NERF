@@ -756,6 +756,7 @@ def train():
         os.path.join(basedir, 'summaries', expname))
     writer.set_as_default()
 
+    train_start_time = time.time()
     for i in range(start, N_iters):
         time0 = time.time()
 
@@ -924,6 +925,18 @@ def train():
                             'z_std', extras['z_std'][tf.newaxis, ..., tf.newaxis])
 
         global_step.assign_add(1)
+
+    train_time = time.time() - train_start_time
+    n_done = N_iters - start
+    print('[ TIMING ] Trained {} iterations in {:.1f}s = {:.2f} min ({:.1f} ms/iter)'.format(
+        n_done, train_time, train_time / 60.0, 1000.0 * train_time / max(n_done, 1)))
+    time_path = os.path.join(basedir, expname, 'training_time.txt')
+    os.makedirs(os.path.dirname(time_path), exist_ok=True)
+    with open(time_path, 'w') as f:
+        f.write('iterations: {}\n'.format(n_done))
+        f.write('train_time_seconds: {:.2f}\n'.format(train_time))
+        f.write('train_time_minutes: {:.2f}\n'.format(train_time / 60.0))
+        f.write('ms_per_iter: {:.2f}\n'.format(1000.0 * train_time / max(n_done, 1)))
 
 
 if __name__ == '__main__':

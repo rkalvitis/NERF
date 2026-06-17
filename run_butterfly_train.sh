@@ -55,7 +55,7 @@ for SPECIES in $SPECIES_LIST; do
         python "$WORKSPACE/fineview2nerf.py" \
             --scene_dir "$COLMAP_DATA/$SPECIES" \
             --out_dir   "$DATA/$SPECIES" \
-            --width 800 \
+            --width 2179 \
             2>&1 | tee "${RUN_LOGS}/${SPECIES}_convert.log"
 
         if [ ! -f "$DATA/$SPECIES/poses_bounds.npy" ]; then
