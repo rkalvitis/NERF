@@ -38,6 +38,10 @@ def main():
     p.add_argument('--out', required=True, help='output colored .ply')
     p.add_argument('--center', type=float, nargs=3, default=[0., 0., 0.],
                    help='scene center the cameras look at (default origin)')
+    p.add_argument('--offset', type=float, default=0.005,
+                   help='push query points this far inside the surface (toward '
+                        'center) where density is higher -> truer, less washed '
+                        'color. 0 = sample exactly on the iso-surface')
     p.add_argument('--chunk', type=int, default=1024 * 64)
     args = p.parse_args()
 
@@ -61,9 +65,13 @@ def main():
     dirs = center[None] - verts
     dirs = dirs / (np.linalg.norm(dirs, axis=-1, keepdims=True) + 1e-8)
 
+    # sample color slightly inside the surface (toward center) where density is
+    # higher -> avoids the washed/background-white color on the fuzzy iso-surface
+    query_pts = verts + args.offset * dirs
+
     rgb = []
-    for i in range(0, len(verts), args.chunk):
-        pts = verts[i:i + args.chunk, None, :]
+    for i in range(0, len(query_pts), args.chunk):
+        pts = query_pts[i:i + args.chunk, None, :]
         vd = dirs[i:i + args.chunk]
         raw = net_fn(pts, viewdirs=vd, network_fn=network_fn).numpy()  # (M,1,4)
         rgb.append(1.0 / (1.0 + np.exp(-raw[:, 0, :3])))               # sigmoid -> [0,1]

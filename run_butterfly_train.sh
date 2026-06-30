@@ -15,7 +15,7 @@
 #   (check with nvidia-smi on rhea before launching).
 # ================================================================
 
-DEVICE=0    # <-- set to your booked GPU index (0, 1, 2, ...)
+DEVICE=2    # <-- set to your booked GPU index (0, 1, 2, ...)
 
 SEED=1
 SPECIES_LIST="
