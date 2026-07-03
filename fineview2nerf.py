@@ -139,7 +139,8 @@ def main():
     ap.add_argument('--out_dir', required=True,
                     help='Output dir for images/ + poses_bounds.npy')
     ap.add_argument('--width', type=int, default=800,
-                    help='Target image width in px (default 800)')
+                    help='Target image width in px (default 800). 0 = native: '
+                         'the largest canvas that upscales no camera')
     ap.add_argument('--allow_heuristic_bounds', action='store_true',
                     help='Permit the camera-distance near/far fallback when '
                          'the point cloud is empty. Smoke tests ONLY: the '
@@ -159,6 +160,13 @@ def main():
             'and training collapses to fog. Triangulate the scene (COLMAP '
             'point_triangulator) or pass --allow_heuristic_bounds for a '
             'local smoke test.')
+
+    # width 0 -> native: largest width whose common focal upscales no
+    # camera, i.e. scale F_target/fx <= 1 for every camera.
+    if args.width <= 0:
+        med_fx_per_px = float(np.median([c[2] / c[0] for c in cams.values()]))
+        args.width = int(min(c[2] for c in cams.values()) / med_fx_per_px)
+        print(f'Native width (no camera upscaled): {args.width}')
 
     # Common focal: median camera, scaled to the target width.
     F_target = float(np.median([fx * args.width / W
