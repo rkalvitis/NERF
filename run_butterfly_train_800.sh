@@ -18,6 +18,9 @@
 # Expnames stay <species>_seed1 so compute_metrics.py works as-is;
 # isolation comes from binding a FRESH host dir to /output:
 #
+#   export COLMAP_DATA=/media/white/nanodrones/roberts.kalvitis/3dgs/3dgs_data/fineview_full_resolution_run
+#   #  ^ the fineview_full_resolution_run SUBDIR — the top-level
+#   #    3dgs_data/<species> dirs are a stale export with 0 points!
 #   export OUTPUT_DIR=/media/white/nanodrones/roberts.kalvitis/nerf/butterfly_output_800
 #   mkdir -p "$OUTPUT_DIR"
 #   singularity exec --nv --cleanenv --contain \
@@ -111,10 +114,16 @@ imgdir = os.path.join(scene, 'images')
 files = sorted(os.listdir(imgdir))
 w, h = Image.open(os.path.join(imgdir, files[0])).size
 near, far = pb[:, -2].min(), pb[:, -1].max()
-print('  check: %d poses, %d images, %dx%d px, near %.2f far %.2f'
-      % (pb.shape[0], len(files), w, h, near, far))
+ratio = (pb[:, -1] / pb[:, -2]).max()
+print('  check: %d poses, %d images, %dx%d px, near %.2f far %.2f '
+      '(worst far/near %.1fx)'
+      % (pb.shape[0], len(files), w, h, near, far, ratio))
 assert pb.shape[0] == len(files), 'pose count != image count'
 assert w == width, 'images are %d px wide, expected %d' % (w, width)
+# Real point-cloud bounds on this telephoto rig give far/near ~1.5x;
+# the empty-point-cloud heuristic gives exactly 20x and trains to fog.
+assert ratio < 5, ('far/near ratio %.1fx — heuristic bounds from an '
+                   'empty point cloud?' % ratio)
 EOF
     if [ $? -ne 0 ]; then
         echo "  ERROR: sanity check failed for $SPECIES — skipping."

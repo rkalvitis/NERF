@@ -20,7 +20,7 @@ converted to NeRF's input format and trained for 200k iterations each.
 
 | What | Where |
 |---|---|
-| COLMAP butterfly scenes (input) | `/media/white/nanodrones/roberts.kalvitis/3dgs/3dgs_data/<species>/` — must contain `sparse/0/{cameras.txt, images.txt, points3D.bin}` and `images/camera1..8/` |
+| COLMAP butterfly scenes (input) | `/media/white/nanodrones/roberts.kalvitis/3dgs/3dgs_data/fineview_full_resolution_run/<species>/` — must contain `sparse/0/{cameras.txt, images.txt, points3D.bin}` and `images/camera1..8/`. **Do NOT use the top-level `3dgs_data/<species>` dirs** — those are a stale export whose `points3D.txt` is an empty stub (0 points → heuristic bounds → training collapses to fog) |
 | NeRF Singularity container | `~/containers/nerf.sif` (built from `nerf.def` — see REPRODUCTION.md Phase 4) |
 | Torch cache (LPIPS weights) | `/media/white/nanodrones/roberts.kalvitis/3dgs/torch_cache` |
 
@@ -90,10 +90,10 @@ mkdir -p /media/white/nanodrones/roberts.kalvitis/nerf/butterfly_output
 Verify the COLMAP scenes are in place:
 
 ```bash
-ls /media/white/nanodrones/roberts.kalvitis/3dgs/3dgs_data/
+ls /media/white/nanodrones/roberts.kalvitis/3dgs/3dgs_data/fineview_full_resolution_run/
 # Expected: 009-Neophasia_Menapia-001/ 072-Colias_Eurytheme-002/ ...
-ls /media/white/nanodrones/roberts.kalvitis/3dgs/3dgs_data/009-Neophasia_Menapia-001/sparse/0/
-# Expected: cameras.txt images.txt points3D.bin
+ls /media/white/nanodrones/roberts.kalvitis/3dgs/3dgs_data/fineview_full_resolution_run/009-Neophasia_Menapia-001/sparse/0/
+# Expected: cameras.txt images.txt points3D.bin (points3D.bin must be MBs, not absent)
 ```
 
 ---
@@ -119,7 +119,7 @@ Then (single launch command):
 
 ```bash
 export CODE_DIR=/home/robertsk/NERF
-export COLMAP_DATA=/media/white/nanodrones/roberts.kalvitis/3dgs/3dgs_data
+export COLMAP_DATA=/media/white/nanodrones/roberts.kalvitis/3dgs/3dgs_data/fineview_full_resolution_run
 export DATA_DIR=/media/white/nanodrones/roberts.kalvitis/nerf/nerf_data
 export OUTPUT_DIR=/media/white/nanodrones/roberts.kalvitis/nerf/butterfly_output
 
